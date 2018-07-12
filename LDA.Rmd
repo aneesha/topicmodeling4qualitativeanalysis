@@ -1,0 +1,103 @@
+---
+title: "LDA Topic Modeling in R"
+output: html_notebook
+---
+
+Uses TM for text data pre-processing and topicmodels package. 
+
+
+```{r}
+setwd("/Users/aneesha/user2018/")
+```
+
+```{r}
+library(tm)
+library(SnowballC)
+library(topicmodels)
+```
+
+```{r}
+survey_responses_raw<-read.csv("surveyresponses.csv", stringsAsFactors = FALSE)
+```
+
+```{r}
+# show column names
+colnames(survey_responses_raw)
+```
+```{r}
+# display a document
+survey_responses_raw$documents[3]
+```
+
+```{r}
+# Perform Character Encoding
+survey_responses_raw$documents <- iconv(survey_responses_raw$documents, "latin1", "ASCII", sub="")
+# Vectorize the documents
+survey_responses <- Corpus(VectorSource(as.vector(survey_responses_raw$documents))) 
+
+```
+
+```{r}
+# Text Pre-processing
+# convert to lowercase
+survey_responses <- tm_map(survey_responses, tolower)
+# remove punctuation
+survey_responses <- tm_map(survey_responses, removePunctuation)
+# remove numbers
+survey_responses <- tm_map(survey_responses, removeNumbers);
+# remove stopwords
+stopword <- c(stopwords('english'), "best");
+survey_responses <- tm_map(survey_responses, removeWords, stopword)
+survey_responses <- tm_map(survey_responses, stemDocument)
+```
+
+```{r}
+# Create document term matrix
+survey_Dtm <- DocumentTermMatrix(survey_responses, control = list(minWordLength = 2));
+survey_Dtm2 <- removeSparseTerms(survey_Dtm, sparse=0.98)
+
+# Find best starting value for the number of topics (k)
+
+source("optimal_K.r")
+control <- list(burnin = 500, iter = 1000, keep = 100)
+
+## Determine Optimal Number of Topics
+(k <- optimal_k(survey_Dtm2, 20, control = control))
+```
+```
+
+```{r}
+k = 12; #number of topics
+SEED = 1234;
+
+no_top_words = 6 #no of top words to show
+no_top_documents = 6 #no top documents to show
+
+# Run LDA
+survey.lda <- LDA(survey_Dtm2, k, method="Gibbs", control=list(seed = SEED))
+
+lda.topics <- as.matrix(topics(survey.lda, 6))
+lda.terms <- terms(survey.lda, no_top_words)
+lda.terms
+
+# print both top words and top documents in a topic
+for (topic_no in 1:k){
+  print(paste("Topic", topic_no))
+  print(lda.terms[,topic_no])
+  docs_in_topic <- survey.lda@gamma[,topic_no]
+  ordered_docs <- order(docs_in_topic, decreasing = TRUE)
+  top_ordered_docs <- ordered_docs[1:no_top_documents]
+  print(top_ordered_docs)
+  for (doc in top_ordered_docs){
+    print(survey_responses_raw$documents[doc])
+  }
+}
+
+```
+
+
+
+
+
+
+

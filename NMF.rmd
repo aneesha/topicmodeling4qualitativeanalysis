@@ -1,0 +1,77 @@
+---
+title: "NMF Topic Modeling in R"
+output: html_notebook
+---
+
+Uses TM for text data pre-processing and topicmodels package. 
+
+
+```{r}
+library(NMF)
+library(ggplot2)
+library(tm)
+library(SnowballC)
+```
+
+```{r}
+survey_responses<-read.csv("surveyresponses.csv", stringsAsFactors = FALSE)
+# Perform Character Encoding
+survey_responses$documents <- iconv(survey_responses$documents, "latin1", "ASCII", sub="")
+# Vectorize the documents
+survey_responses <- Corpus(VectorSource(as.vector(survey_responses$documents))) 
+```
+
+```{r}
+# Text Preprocessing
+# convert to lowercase
+survey_responses <- tm_map(survey_responses, tolower)
+# remove punctuation
+survey_responses <- tm_map(survey_responses, removePunctuation)
+#remove numbers
+survey_responses <- tm_map(survey_responses, removeNumbers);
+# remove generic and custom stopwords
+stopword <- c(stopwords('english'), "best");
+survey_responses <- tm_map(survey_responses, removeWords, stopword)
+survey_responses <- tm_map(survey_responses, stemDocument)
+```
+
+```{r}
+survey_Dtm <- DocumentTermMatrix(survey_responses, control = list(minWordLength = 2));
+survey_Dtm2 <- removeSparseTerms(survey_Dtm, sparse=0.98)
+
+```
+
+```{r}     
+new_matrix <- as.matrix(survey_Dtm2)
+rownames(new_matrix) <- new_matrix[,1]
+
+k = 12 # number of topics
+# Run NMF
+nmf_tm <- nmf(new_matrix, k,"lee", seed="nndsvd")  # nndsvd greatly helps with convergence
+
+w <- basis(nmf_tm) #  W matrix
+dim(w) # show dimensions 
+h <- coef(nmf_tm) # H matrix
+dim(h) # show dimensions
+
+# print both top words and top documents in a topic
+no_top_words = 6
+no_top_documents = 6
+
+for (topic_no in 1:k){
+  print(paste("Topic", topic_no))
+  words_in_topic <- h[topic_no,]
+  ordered_words <- order(words_in_topic, decreasing = TRUE)
+  top_ordered_words <- ordered_words[1:no_top_words]
+  print(top_ordered_words)
+  for (word in top_ordered_words){
+    print(names(words_in_topic)[word])
+  }
+}
+```
+```{r}
+# Display graphs to help estimate number of topics
+estim.r <- nmf(new_matrix, 2:18, nrun=4, seed="nndsvd")
+plot(estim.r)
+```
+
