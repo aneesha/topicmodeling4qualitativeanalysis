@@ -2,9 +2,9 @@
 
 Slides: https://goo.gl/XoZusf 
 
-LDA.r contains code to perform Latent Dirichlet Allocation using the Topicmodels package. 
+LDA.Rmd contains code to perform Latent Dirichlet Allocation using the Topicmodels package. 
 
-NMF.r contains code to use Non Negative Matrix Factorization using the NMF package.
+NMF.Rmd contains code to use Non Negative Matrix Factorization using the NMF package.
 
 KwicRTopics.r contains code to load a dev version of the experimental topic model browser that incorporates keywords in context functionality as an R HTMLWidget. The KwicRTopics github repo: https://github.com/aneesha/kwicRtopics
 
